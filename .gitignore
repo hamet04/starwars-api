@@ -1,0 +1,18 @@
+# Node.js dependencies
+node_modules/
+
+# Build outputs
+dist/
+
+# Environment variables
+.env
+
+# Jest coverage reports
+coverage/
+
+# Logs
+*.log
+
+# System files
+.DS_Store
+Thumbs.db

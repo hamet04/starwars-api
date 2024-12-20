@@ -1,0 +1,52 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "StarWars API",
+    "version": "1.0.0",
+    "description": "API para manejar datos de Star Wars con DynamoDB y SWAPI"
+  },
+  "paths": {
+    "/create": {
+      "post": {
+        "summary": "Crear un nuevo elemento",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Elemento creado exitosamente"
+          }
+        }
+      }
+    },
+    "/fetch": {
+      "get": {
+        "summary": "Obtener datos almacenados y de SWAPI",
+        "responses": {
+          "200": {
+            "description": "Datos obtenidos correctamente"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "RequestBody": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "height": { "type": "string" },
+          "mass": { "type": "string" }
+        },
+        "required": ["name", "height", "mass"]
+      }
+    }
+  }
+}

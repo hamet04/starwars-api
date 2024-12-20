@@ -1,0 +1,42 @@
+service: starwars-api
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: us-east-1
+
+functions:
+  post:
+    handler: src/handlers/postHandler.main
+    events:
+      - httpApi:
+          path: /create
+          method: post
+  get:
+    handler: src/handlers/getHandler.main
+    events:
+      - httpApi:
+          path: /fetch
+          method: get
+
+custom:
+  serverless-offline:
+    useWorkerThreads: false
+
+plugins:
+  - serverless-plugin-typescript
+  - serverless-offline
+
+resources:
+  Resources:
+    StarWarsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: StarWars
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
