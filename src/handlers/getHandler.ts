@@ -1,19 +1,23 @@
 import { APIGatewayProxyResult } from "aws-lambda";
 import { getData } from "../services/dbService";
 import { fetchStarWarsData } from "../services/swapiService";
-import { log } from "../utils/logger";
+import { log, errorLog } from "../utils/logger";
 import { StarWarsPerson } from "../models/interfaces";
 
-export const main = async (): Promise<APIGatewayProxyResult> => {
+const fetchPeopleData = async (): Promise<StarWarsPerson[]> => {
+  try {
+    const response = await fetchStarWarsData("people");
+    return response.results.slice(0, 5);
+  } catch (error: any) {
+    console.error("SWAPI Error:", error.message);
+    return [];
+  }
+};
+
+export const handleGetRequest = async (): Promise<APIGatewayProxyResult> => {
   try {
     const dbData = await getData();
-    let swapiData: StarWarsPerson[] = [];
-    try {
-      const response = await fetchStarWarsData("people");
-      swapiData = response.results.slice(0, 5);
-    } catch (error) {
-      console.error("SWAPI Error:", error.message);
-    }
+    const swapiData = await fetchPeopleData();
 
     log("Fetched data", { dbData, swapiData });
     return {
@@ -24,7 +28,7 @@ export const main = async (): Promise<APIGatewayProxyResult> => {
       }),
     };
   } catch (error: any) {
-    console.error("Error in GET handler:", error.message);
+    errorLog("Error in GET handler:", error.message);
     return {
       statusCode: 500,
       body: JSON.stringify({ message: "Error fetching data" }),

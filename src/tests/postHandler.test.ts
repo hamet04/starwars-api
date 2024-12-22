@@ -1,18 +1,40 @@
-import { main as postHandler } from "../handlers/postHandler";
+import { handlePostRequest } from "../handlers/postHandler";
+import { saveData } from "../services/dbService";
+import { validateInput } from "../utils/validateInput";
+import { v4 as uuidv4 } from "uuid";
 
-jest.mock("../services/dbService", () => ({
-  saveData: jest.fn(() => Promise.resolve()),
-}));
+jest.mock("../services/dbService");
+jest.mock("../utils/validateInput");
+jest.mock("uuid", () => ({ v4: jest.fn() }));
 
-test("POST handler saves data successfully", async () => {
-  const event = { body: JSON.stringify({ name: "Luke", height: "172", mass: "77" }) } as any;
-  const response = await postHandler(event);
-  expect(response.statusCode).toBe(201);
-});
+describe("handlePostRequest", () => {
+  it("should save valid data", async () => {
+    (uuidv4 as jest.Mock).mockReturnValue("1234");
+    (saveData as jest.Mock).mockResolvedValue(undefined);
 
-test("POST handler fails when invalid JSON is provided", async () => {
-  const event = { body: "{ invalid JSON" } as any;
-  const response = await postHandler(event);
-  expect(response.statusCode).toBe(400);
-  expect(JSON.parse(response.body).message).toContain("Unexpected token");
+    const mockEvent = {
+      body: JSON.stringify({ name: "Luke Skywalker", height: "172", mass: "77" }),
+    };
+
+    const result = await handlePostRequest(mockEvent as any);
+
+    expect(result.statusCode).toBe(201);
+    expect(JSON.parse(result.body)).toEqual({
+      message: "Data saved successfully",
+      data: { id: "1234", name: "Luke Skywalker", height: "172", mass: "77" },
+    });
+  });
+
+  it("should return an error for invalid input", async () => {
+    (validateInput as jest.Mock).mockImplementation(() => {
+      throw new Error("Missing required fields: height");
+    });
+
+    const mockEvent = { body: JSON.stringify({ name: "Luke Skywalker" }) };
+
+    const result = await handlePostRequest(mockEvent as any);
+
+    expect(result.statusCode).toBe(400);
+    expect(JSON.parse(result.body)).toEqual({ message: "Missing required fields: height" });
+  });
 });

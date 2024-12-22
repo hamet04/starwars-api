@@ -1,21 +1,33 @@
-import { main as getHandler } from "../handlers/getHandler";
+import { handleGetRequest } from "../handlers/getHandler";
+import { getData } from "../services/dbService";
 import { fetchStarWarsData } from "../services/swapiService";
 
-jest.mock("../services/swapiService", () => ({
-  fetchStarWarsData: jest.fn(() =>
-    Promise.resolve({
-      results: [
-        { name: "Luke", height: "172", mass: "77" },
-        { name: "Leia", height: "150", mass: "49" },
-      ],
-    })
-  ),
-}));
+jest.mock("../services/dbService");
+jest.mock("../services/swapiService");
 
-test("GET handler fetches data", async () => {
-  const response = await getHandler();
-  expect(response.statusCode).toBe(200);
-  const body = JSON.parse(response.body);
-  expect(body.dbData).toBeDefined();
-  expect(body.swapiData).toHaveLength(2);
+describe("handleGetRequest", () => {
+  it("should return data from the database and SWAPI", async () => {
+    const mockDbData = [{ id: "1", name: "Luke Skywalker" }];
+    const mockSwapiData = { results: [{ name: "Leia Organa" }] };
+
+    (getData as jest.Mock).mockResolvedValue(mockDbData);
+    (fetchStarWarsData as jest.Mock).mockResolvedValue(mockSwapiData);
+
+    const result = await handleGetRequest();
+
+    expect(result.statusCode).toBe(200);
+    expect(JSON.parse(result.body)).toEqual({
+      dbData: mockDbData,
+      swapiData: mockSwapiData.results.slice(0, 5),
+    });
+  });
+
+  it("should handle errors gracefully", async () => {
+    (getData as jest.Mock).mockRejectedValue(new Error("Database error"));
+
+    const result = await handleGetRequest();
+
+    expect(result.statusCode).toBe(500);
+    expect(JSON.parse(result.body)).toEqual({ message: "Error fetching data" });
+  });
 });
